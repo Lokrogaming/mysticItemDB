@@ -113,6 +113,19 @@
 
     function formatPrice(value) {
       if (value == null || isNaN(value)) return '—';
+      const abs = Math.abs(value);
+      const units = [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
+      for (const [threshold, suffix] of units) {
+        if (abs >= threshold) {
+          const rounded = Math.round((value / threshold) * 10) / 10;
+          return rounded.toString() + suffix;
+        }
+      }
+      return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function formatFull(value) {
+      if (value == null || isNaN(value)) return '—';
       return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     }
 
@@ -236,15 +249,15 @@
             <div class="grid grid-cols-3 gap-1.5">
               <div class="rounded-lg bg-slate-950/60 p-2 text-center">
                 <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Per Item</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.perItem)}</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.perItem)}">${formatPrice(p.perItem)}</span>
               </div>
               <div class="rounded-lg bg-slate-950/60 p-2 text-center">
                 <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Half (${p.halfCount})</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.halfStack)}</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.halfStack)}">${formatPrice(p.halfStack)}</span>
               </div>
               <div class="rounded-lg bg-slate-950/60 p-2 text-center">
                 <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Stack (${p.fullCount})</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.fullStack)}</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.fullStack)}">${formatPrice(p.fullStack)}</span>
               </div>
             </div>
           </article>`;

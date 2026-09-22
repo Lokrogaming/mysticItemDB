@@ -190,7 +190,22 @@
     const CHIP_ACTIVE = 'bg-emerald-500 border-emerald-500 text-slate-950 font-semibold';
 
     function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2); }
-    function formatPrice(v) { return v == null || isNaN(v) ? '—' : v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+    function formatPrice(v) {
+      if (v == null || isNaN(v)) return '—';
+      const abs = Math.abs(v);
+      const units = [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
+      for (const [threshold, suffix] of units) {
+        if (abs >= threshold) {
+          const rounded = Math.round((v / threshold) * 10) / 10;
+          return rounded.toString() + suffix;
+        }
+      }
+      return v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    function formatFull(v) {
+      if (v == null || isNaN(v)) return '—';
+      return v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
     function calcPrices(p, s) { const h = Math.floor(s / 2); return { perItem: p, halfStack: p * h, fullStack: p * s, halfCount: h, fullCount: s }; }
     function getCat(item) { return item.category || 'Misc'; }
     function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
@@ -234,6 +249,9 @@
       document.getElementById('preview-item').textContent = p ? formatPrice(p.perItem) : '—';
       document.getElementById('preview-half').textContent = p ? formatPrice(p.halfStack) : '—';
       document.getElementById('preview-full').textContent = p ? formatPrice(p.fullStack) : '—';
+      document.getElementById('preview-item').title = p ? formatFull(p.perItem) : '';
+      document.getElementById('preview-half').title = p ? formatFull(p.halfStack) : '';
+      document.getElementById('preview-full').title = p ? formatFull(p.fullStack) : '';
       document.getElementById('preview-half-count').textContent = '(' + Math.floor(stack / 2) + ')';
       document.getElementById('preview-full-count').textContent = '(' + stack + ')';
     }
@@ -336,9 +354,9 @@
             <span class="inline-block rounded-full border border-emerald-400/60 bg-emerald-400/10 px-2 py-0.5 mt-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">${escapeHtml(getCat(item))}</span></div>
           </div>
           <div class="grid grid-cols-3 gap-1.5">
-            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Per Item</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.perItem)}</span></div>
-            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Half (${p.halfCount})</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.halfStack)}</span></div>
-            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Stack (${p.fullCount})</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.fullStack)}</span></div>
+            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Per Item</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.perItem)}">${formatPrice(p.perItem)}</span></div>
+            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Half (${p.halfCount})</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.halfStack)}">${formatPrice(p.halfStack)}</span></div>
+            <div class="rounded-lg bg-slate-950/60 p-2 text-center"><span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Stack (${p.fullCount})</span><span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.fullStack)}">${formatPrice(p.fullStack)}</span></div>
           </div>
           <div class="flex gap-2 mt-auto">
             <button type="button" class="flex-1 rounded-lg border border-emerald-400/70 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-400 hover:text-slate-950 transition" data-action="edit" data-id="${item.id}">Edit</button>
