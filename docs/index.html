@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystic Item DB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { pixel: ['"Press Start 2P"', 'monospace'], sans: ['Inter', 'system-ui', 'sans-serif'] } } },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #020617;
+      background-image:
+        linear-gradient(rgba(2, 6, 23, 0.96), rgba(2, 6, 23, 0.96)),
+        url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 31h32M31 0v32' stroke='%231e293b' stroke-opacity='0.5' stroke-width='1'/%3E%3C/svg%3E");
+    }
+    .pixel-title { text-shadow: 2px 2px 0 #f43f5e; }
+    .mc-icon { image-rendering: pixelated; image-rendering: crisp-edges; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+  </style>
+</head>
+<body class="font-sans text-slate-200 min-h-screen antialiased">
+  <div class="mx-auto max-w-7xl px-3 sm:px-6 py-6">
+    <header class="text-center px-2 pt-6 pb-4">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <span class="text-3xl sm:text-4xl">📖</span>
+        <h1 class="font-pixel text-amber-300 pixel-title text-sm sm:text-lg md:text-xl leading-relaxed">Mystic Item DB</h1>
+      </div>
+      <p class="text-slate-400 text-sm sm:text-base">Minecraft item price list — per item, half stack &amp; full stack</p>
+      <div class="flex justify-center flex-wrap gap-2 mt-4">
+        <a href="./admin/" class="rounded-lg border-2 border-slate-700 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition">⛏️ Admin</a>
+        <a href="./builder/" class="rounded-lg border-2 border-slate-700 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition">🧩 Component Builder</a>
+      </div>
+      <div class="flex justify-center flex-wrap gap-2 sm:gap-3 mt-4">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
+          <span class="block text-xl font-bold text-amber-300 tabular-nums" id="stat-items">0</span>
+          <span class="text-[11px] uppercase tracking-wider text-slate-400">Items</span>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
+          <span class="block text-xl font-bold text-emerald-300 tabular-nums" id="stat-categories">0</span>
+          <span class="text-[11px] uppercase tracking-wider text-slate-400">Categories</span>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
+          <span class="block text-xl font-bold text-slate-200 tabular-nums" id="stat-shown">0</span>
+          <span class="text-[11px] uppercase tracking-wider text-slate-400">Shown</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="mt-4">
+      <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-col xl:flex-row xl:items-center gap-3 justify-between mb-4">
+          <h2 class="text-emerald-300 font-semibold text-base sm:text-lg shrink-0">Price List</h2>
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center w-full xl:w-auto">
+            <input type="text" id="search" placeholder="🔍 Search 1000+ items…"
+              class="w-full sm:w-56 bg-slate-950 border-2 border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-rose-500 transition">
+            <div class="flex items-center gap-2">
+              <label for="sort-field" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">Sort by</label>
+              <select id="sort-field" class="flex-1 sm:flex-none bg-slate-950 border-2 border-slate-700 rounded-lg px-2 py-2 text-sm text-slate-100 focus:outline-none focus:border-rose-500 cursor-pointer">
+                <option value="name">Name</option>
+                <option value="price">Price</option>
+                <option value="category">Category</option>
+              </select>
+              <button type="button" id="sort-direction" title="Toggle sort direction"
+                class="rounded-lg bg-slate-950 border-2 border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition min-w-[76px]">↑ Asc</button>
+            </div>
+          </div>
+        </div>
+        <div id="category-filters" class="flex flex-wrap gap-1.5 mb-4"></div>
+        <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+          <div class="col-span-full text-center py-12 text-slate-400">
+            <span class="block text-4xl mb-3">⏳</span>
+            <p class="text-sm">Loading database…</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="text-center py-6 text-xs text-slate-500">
+      <p id="footer-meta">Read-only showcase · Prices per item, half stack &amp; full stack</p>
+    </footer>
+  </div>
+
+  <script>
+    const DB_FILE = 'db.json';
+
+    let items = [];
+    let categories = [];
+    let activeCategory = '';
+    let sortDirection = 'asc';
+
+    const itemsGrid = document.getElementById('items-grid');
+    const categoryFilters = document.getElementById('category-filters');
+    const searchInput = document.getElementById('search');
+    const sortFieldSelect = document.getElementById('sort-field');
+    const sortDirectionBtn = document.getElementById('sort-direction');
+    const statItems = document.getElementById('stat-items');
+    const statCategories = document.getElementById('stat-categories');
+    const statShown = document.getElementById('stat-shown');
+    const footerMeta = document.getElementById('footer-meta');
+
+    const CHIP_BASE = 'rounded-full border-2 px-3 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap';
+    const CHIP_IDLE = 'bg-slate-950 border-slate-700 text-slate-400 hover:border-rose-500 hover:text-slate-200';
+    const CHIP_ACTIVE = 'bg-emerald-500 border-emerald-500 text-slate-950 font-semibold';
+
+    function formatPrice(value) {
+      if (value == null || isNaN(value)) return '—';
+      return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function calcPrices(pricePerItem, stackSize) {
+      const half = Math.floor(stackSize / 2);
+      return { perItem: pricePerItem, halfStack: pricePerItem * half, fullStack: pricePerItem * stackSize, halfCount: half, fullCount: stackSize };
+    }
+
+    function getItemCategory(item) { return item.category || 'Misc'; }
+
+    function iconSrc(item) {
+      // New export: relative 'textures/item/foo.png'. Legacy: embedded iconData.
+      if (item.iconData) return item.iconData;
+      if (item.icon) return item.icon;
+      return null;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
+
+    function getFilteredItems() {
+      const query = searchInput.value.toLowerCase().trim();
+      return items.filter((item) => {
+        const matchesSearch = !query || item.name.toLowerCase().includes(query);
+        const matchesCategory = !activeCategory || getItemCategory(item) === activeCategory;
+        return matchesSearch && matchesCategory;
+      });
+    }
+
+    function sortItems(list) {
+      const field = sortFieldSelect.value;
+      const mult = sortDirection === 'asc' ? 1 : -1;
+      return [...list].sort((a, b) => {
+        let cmp = 0;
+        if (field === 'price') cmp = a.pricePerItem - b.pricePerItem;
+        else if (field === 'category') {
+          cmp = getItemCategory(a).localeCompare(getItemCategory(b), undefined, { sensitivity: 'base' });
+          if (cmp === 0) cmp = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        } else cmp = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        return cmp * mult;
+      });
+    }
+
+    function updateSortDirectionLabel() {
+      sortDirectionBtn.textContent = sortDirection === 'asc' ? '↑ Asc' : '↓ Desc';
+      sortDirectionBtn.classList.toggle('!border-emerald-400', sortDirection === 'desc');
+      sortDirectionBtn.classList.toggle('!text-emerald-300', sortDirection === 'desc');
+    }
+
+    function getCategoryCounts() {
+      const counts = {};
+      for (const item of items) {
+        const cat = getItemCategory(item);
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+      return counts;
+    }
+
+    function updateStats(shown) {
+      statItems.textContent = items.length;
+      statCategories.textContent = new Set(items.map(getItemCategory)).size;
+      statShown.textContent = shown ?? items.length;
+    }
+
+    function renderCategoryFilters() {
+      const counts = getCategoryCounts();
+      const usedCategories = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+      const allCategories = [...new Set([...categories, ...usedCategories])].sort((a, b) => a.localeCompare(b));
+      const chip = (label, cat, count, active) =>
+        `<button type="button" class="${CHIP_BASE} ${active ? CHIP_ACTIVE : CHIP_IDLE}" data-category="${escapeHtml(cat)}">${escapeHtml(label)}<span class="opacity-70 ml-1">(${count})</span></button>`;
+      categoryFilters.innerHTML =
+        chip('All', '', items.length, activeCategory === '') +
+        allCategories.filter((cat) => (counts[cat] || 0) > 0)
+          .map((cat) => chip(cat, cat, counts[cat], activeCategory === cat)).join('');
+    }
+
+    function iconHtml(item) {
+      const src = iconSrc(item);
+      const initial = escapeHtml((item.name || '?').charAt(0).toUpperCase());
+      if (!src) {
+        return `<span class="flex items-center justify-center w-10 h-10 rounded-md bg-slate-800 text-lg font-bold text-slate-500">${initial}</span>`;
+      }
+      return `<img src="${src}" alt="${escapeHtml(item.name)}" loading="lazy"
+          class="mc-icon w-10 h-10 object-contain"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <span style="display:none" class="items-center justify-center w-10 h-10 rounded-md bg-slate-800 text-lg font-bold text-slate-500">${initial}</span>`;
+    }
+
+    function renderItems() {
+      const filtered = sortItems(getFilteredItems());
+      const query = searchInput.value.trim();
+      const hasFilters = query || activeCategory;
+
+      updateStats(filtered.length);
+      renderCategoryFilters();
+
+      if (filtered.length === 0) {
+        itemsGrid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-slate-400">
+            <span class="block text-4xl mb-3">${hasFilters ? '🔍' : '🗃️'}</span>
+            <p class="text-sm">${hasFilters ? 'No items match your filters.' : 'No items in the database.'}</p>
+          </div>`;
+        return;
+      }
+
+      itemsGrid.innerHTML = filtered.map((item) => {
+        const p = calcPrices(item.pricePerItem, item.stackSize);
+        const category = getItemCategory(item);
+        return `
+          <article class="flex flex-col gap-3 rounded-xl border-2 border-slate-700/60 bg-slate-800/60 p-4 transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-xl">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="flex items-center justify-center w-14 h-14 rounded-lg bg-slate-950/80 border-2 border-slate-700/60 shrink-0 overflow-hidden">${iconHtml(item)}</div>
+              <div class="flex flex-col gap-1 min-w-0">
+                <span class="font-bold text-[15px] leading-tight text-slate-100 break-words">${escapeHtml(item.name)}</span>
+                <span class="self-start inline-block rounded-full border border-emerald-400/60 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">${escapeHtml(category)}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
+                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Per Item</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.perItem)}</span>
+              </div>
+              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
+                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Half (${p.halfCount})</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.halfStack)}</span>
+              </div>
+              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
+                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Stack (${p.fullCount})</span>
+                <span class="block font-bold text-[13px] text-amber-300 tabular-nums">${formatPrice(p.fullStack)}</span>
+              </div>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    function showError(message) {
+      itemsGrid.innerHTML = `
+        <div class="col-span-full text-center py-12 text-slate-400">
+          <span class="block text-4xl mb-3">⚠️</span>
+          <p class="text-sm">${escapeHtml(message)}</p>
+        </div>`;
+      updateStats(0);
+    }
+
+    async function loadDatabase() {
+      try {
+        const res = await fetch(DB_FILE);
+        if (!res.ok) throw new Error('Database file not found');
+        const data = await res.json();
+        if (!Array.isArray(data.items)) throw new Error('Invalid db.json — missing items array');
+        items = data.items;
+        categories = Array.isArray(data.categories) ? data.categories : [];
+        if (data.exportedAt) {
+          const date = new Date(data.exportedAt).toLocaleDateString();
+          footerMeta.textContent = `Last updated ${date} · Prices per item, half stack & full stack`;
+        }
+        renderItems();
+      } catch {
+        showError(`Could not load ${DB_FILE}. Run “Update Pages” in the admin panel first.`);
+      }
+    }
+
+    categoryFilters.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-category]');
+      if (!chip) return;
+      activeCategory = chip.dataset.category || '';
+      renderItems();
+    });
+
+    searchInput.addEventListener('input', renderItems);
+    sortFieldSelect.addEventListener('change', renderItems);
+    sortDirectionBtn.addEventListener('click', () => {
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      updateSortDirectionLabel();
+      renderItems();
+    });
+    updateSortDirectionLabel();
+    loadDatabase();
+  </script>
+</body>
+</html>
