@@ -3,93 +3,159 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mystic Item DB</title>
+  <title>Mystic Archive — Relic Prices</title>
+  <meta name="description" content="A dark grimoire of Minecraft relic prices — per item, half stack and full stack.">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: { extend: { fontFamily: { pixel: ['"Press Start 2P"', 'monospace'], sans: ['Inter', 'system-ui', 'sans-serif'] } } },
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'spin-slower': 'spin 140s linear infinite',
+            'pulse-soft': 'pulseSoft 5s ease-in-out infinite',
+          },
+          keyframes: {
+            pulseSoft: {
+              '0%, 100%': { opacity: '0.5' },
+              '50%': { opacity: '1' },
+            },
+          },
+        },
+      },
     };
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    html { color-scheme: dark; }
     body {
-      background-color: #020617;
+      background-color: #050509;
       background-image:
-        linear-gradient(rgba(2, 6, 23, 0.96), rgba(2, 6, 23, 0.96)),
-        url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 31h32M31 0v32' stroke='%231e293b' stroke-opacity='0.5' stroke-width='1'/%3E%3C/svg%3E");
+        radial-gradient(900px 480px at 15% -5%, rgba(124, 58, 237, 0.16), transparent 60%),
+        radial-gradient(800px 500px at 85% 0%, rgba(49, 46, 129, 0.22), transparent 60%),
+        radial-gradient(700px 420px at 50% 110%, rgba(124, 58, 237, 0.10), transparent 60%),
+        radial-gradient(520px 300px at 50% 0%, rgba(251, 191, 36, 0.06), transparent 65%);
+      background-attachment: fixed;
     }
-    .pixel-title { text-shadow: 2px 2px 0 #f43f5e; }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23ffffff' fill-opacity='0.10'/%3E%3Ccircle cx='70' cy='45' r='1' fill='%23ffffff' fill-opacity='0.07'/%3E%3Ccircle cx='35' cy='90' r='1' fill='%23ffffff' fill-opacity='0.08'/%3E%3Ccircle cx='100' cy='100' r='1' fill='%23ffffff' fill-opacity='0.06'/%3E%3C/svg%3E");
+    }
+    .gold-text {
+      background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 38%, #d97706 72%, #fbbf24 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 22px rgba(251, 191, 36, 0.25));
+    }
     .mc-icon { image-rendering: pixelated; image-rendering: crisp-edges; }
+    .relic-card { transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+    .relic-card:hover { transform: translateY(-4px); }
+    ::selection { background: rgba(167, 139, 250, 0.4); }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0a12; }
+    ::-webkit-scrollbar-thumb { background: #2e2a4a; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4c4480; }
+    select option { background-color: #0a0a12; }
+    @media (prefers-reduced-motion: reduce) {
+      .relic-card:hover { transform: none; }
+    }
   </style>
 </head>
-<body class="font-sans text-slate-200 min-h-screen antialiased">
-  <div class="mx-auto max-w-7xl px-3 sm:px-6 py-6">
-    <header class="text-center px-2 pt-6 pb-4">
-      <div class="flex items-center justify-center gap-3 mb-2">
-        <span class="text-3xl sm:text-4xl">📖</span>
-        <h1 class="font-pixel text-amber-300 pixel-title text-sm sm:text-lg md:text-xl leading-relaxed">Mystic Item DB</h1>
+<body class="font-sans text-slate-200 min-h-screen antialiased overflow-x-hidden">
+  <canvas id="motes" class="fixed inset-0 pointer-events-none" aria-hidden="true"></canvas>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 pb-10">
+
+    <!-- Header -->
+    <header class="relative text-center px-2 pt-12 pb-6">
+      <div class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07] animate-spin-slower" aria-hidden="true">
+        <svg width="520" height="520" viewBox="0 0 200 200" fill="none" stroke="#a78bfa" stroke-width="0.6">
+          <circle cx="100" cy="100" r="96" />
+          <circle cx="100" cy="100" r="78" />
+          <circle cx="100" cy="100" r="58" />
+          <path d="M100 4 L100 196 M4 100 L196 100 M32 32 L168 168 M168 32 L32 168" />
+          <polygon points="100,22 170,140 30,140" />
+          <polygon points="100,178 30,60 170,60" />
+          <circle cx="100" cy="100" r="10" />
+        </svg>
       </div>
-      <p class="text-slate-400 text-sm sm:text-base">Minecraft item price list — per item, half stack &amp; full stack</p>
-      <div class="flex justify-center flex-wrap gap-2 mt-4">
-        <a href="./admin/" class="rounded-lg border-2 border-slate-700 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition">⛏️ Admin</a>
-        <a href="./builder/" class="rounded-lg border-2 border-slate-700 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition">🧩 Component Builder</a>
-      </div>
-      <div class="flex justify-center flex-wrap gap-2 sm:gap-3 mt-4">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
-          <span class="block text-xl font-bold text-amber-300 tabular-nums" id="stat-items">0</span>
-          <span class="text-[11px] uppercase tracking-wider text-slate-400">Items</span>
+
+      <p class="relative font-display text-[11px] sm:text-xs tracking-[0.4em] text-violet-300/70 uppercase">❖&nbsp;&nbsp;The Mystic Archive&nbsp;&nbsp;❖</p>
+      <h1 class="relative font-display gold-text font-extrabold text-4xl sm:text-6xl mt-3 tracking-wide">MYSTIC ARCHIVE</h1>
+      <p class="relative text-slate-400 text-sm sm:text-base mt-3 max-w-xl mx-auto">Every relic weighed in gold — per item, half stack <span class="text-slate-500">and</span> full stack.</p>
+
+      <!-- Stats -->
+      <div class="relative grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mt-8 max-w-3xl mx-auto">
+        <div class="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-3">
+          <span class="block font-display text-2xl font-bold text-amber-200 tabular-nums" id="stat-items">0</span>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Relics</span>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
-          <span class="block text-xl font-bold text-emerald-300 tabular-nums" id="stat-categories">0</span>
-          <span class="text-[11px] uppercase tracking-wider text-slate-400">Categories</span>
+        <div class="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-3">
+          <span class="block font-display text-2xl font-bold text-violet-200 tabular-nums" id="stat-categories">0</span>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Schools</span>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 min-w-[96px]">
-          <span class="block text-xl font-bold text-slate-200 tabular-nums" id="stat-shown">0</span>
-          <span class="text-[11px] uppercase tracking-wider text-slate-400">Shown</span>
+        <div class="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-3">
+          <span class="block font-display text-2xl font-bold text-slate-100 tabular-nums" id="stat-shown">0</span>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Revealed</span>
+        </div>
+        <div class="rounded-2xl border border-amber-200/20 bg-amber-200/[0.04] backdrop-blur px-4 py-3 col-span-2 md:col-span-1">
+          <span class="block font-display text-2xl font-bold text-amber-200 tabular-nums" id="stat-top-price">—</span>
+          <span class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 truncate" id="stat-top-name">Crown jewel</span>
         </div>
       </div>
     </header>
 
-    <main class="mt-4">
-      <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
-        <div class="flex flex-col xl:flex-row xl:items-center gap-3 justify-between mb-4">
-          <h2 class="text-emerald-300 font-semibold text-base sm:text-lg shrink-0">Price List</h2>
-          <div class="flex flex-col sm:flex-row gap-2 sm:items-center w-full xl:w-auto">
-            <input type="text" id="search" placeholder="🔍 Search 1000+ items…"
-              class="w-full sm:w-56 bg-slate-950 border-2 border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-rose-500 transition">
-            <div class="flex items-center gap-2">
-              <label for="sort-field" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">Sort by</label>
-              <select id="sort-field" class="flex-1 sm:flex-none bg-slate-950 border-2 border-slate-700 rounded-lg px-2 py-2 text-sm text-slate-100 focus:outline-none focus:border-rose-500 cursor-pointer">
-                <option value="name">Name</option>
-                <option value="price">Price</option>
-                <option value="category">Category</option>
-              </select>
-              <button type="button" id="sort-direction" title="Toggle sort direction"
-                class="rounded-lg bg-slate-950 border-2 border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 hover:border-emerald-400 hover:text-emerald-300 transition min-w-[76px]">↑ Asc</button>
-            </div>
-          </div>
+    <!-- Scrying panel -->
+    <section class="relative rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md p-4 sm:p-6 shadow-[0_0_60px_-20px_rgba(124,58,237,0.5)]">
+      <div class="max-w-xl mx-auto">
+        <input type="text" id="search" placeholder="✦ Scry the archive… (name or minecraft:id)"
+          class="w-full bg-white/[0.04] border border-violet-300/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-violet-300/60 focus:ring-2 focus:ring-violet-500/20 focus:bg-white/[0.06] transition text-center">
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2 sm:items-center justify-center mt-3">
+        <label for="sort-field" class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 shrink-0">Order by</label>
+        <select id="sort-field" class="bg-white/[0.04] border border-violet-300/20 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-300/60 cursor-pointer">
+          <option value="name">Name</option>
+          <option value="price">Worth</option>
+          <option value="category">School</option>
+        </select>
+        <button type="button" id="sort-direction" title="Toggle sort direction"
+          class="rounded-lg bg-white/[0.04] border border-violet-300/20 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-violet-300/60 hover:text-violet-200 transition min-w-[84px]">↑ Asc</button>
+      </div>
+      <div class="flex items-center gap-3 mt-5 mb-3">
+        <span class="h-px flex-1 bg-gradient-to-r from-transparent via-violet-300/30 to-transparent"></span>
+        <span class="font-display text-[10px] tracking-[0.35em] text-violet-300/60 uppercase">Schools of relics</span>
+        <span class="h-px flex-1 bg-gradient-to-r from-transparent via-violet-300/30 to-transparent"></span>
+      </div>
+      <div id="category-filters" class="flex flex-wrap justify-center gap-1.5"></div>
+    </section>
+
+    <!-- Relics -->
+    <main class="mt-6">
+      <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+        <div class="col-span-full text-center py-16 text-slate-500">
+          <span class="block text-4xl mb-3 animate-pulse-soft">✦</span>
+          <p class="text-sm font-display tracking-[0.25em] uppercase text-xs">Consulting the spirits…</p>
         </div>
-        <div id="category-filters" class="flex flex-wrap gap-1.5 mb-4"></div>
-        <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
-          <div class="col-span-full text-center py-12 text-slate-400">
-            <span class="block text-4xl mb-3">⏳</span>
-            <p class="text-sm">Loading database…</p>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
 
-    <footer class="text-center py-6 text-xs text-slate-500">
-      <p id="footer-meta">Read-only showcase · Prices per item, half stack &amp; full stack</p>
+    <footer class="text-center pt-10 pb-4 text-xs text-slate-600">
+      <p class="font-display tracking-[0.3em] uppercase text-[10px] text-violet-300/40 mb-2">❖ ❖ ❖</p>
+      <p id="footer-meta">Forged in the dark · Worth per item, half stack &amp; full stack</p>
     </footer>
   </div>
 
   <script>
+    'use strict';
     const DB_FILE = 'db.json';
 
     let items = [];
@@ -105,12 +171,15 @@
     const statItems = document.getElementById('stat-items');
     const statCategories = document.getElementById('stat-categories');
     const statShown = document.getElementById('stat-shown');
+    const statTopPrice = document.getElementById('stat-top-price');
+    const statTopName = document.getElementById('stat-top-name');
     const footerMeta = document.getElementById('footer-meta');
 
-    const CHIP_BASE = 'rounded-full border-2 px-3 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap';
-    const CHIP_IDLE = 'bg-slate-950 border-slate-700 text-slate-400 hover:border-rose-500 hover:text-slate-200';
-    const CHIP_ACTIVE = 'bg-emerald-500 border-emerald-500 text-slate-950 font-semibold';
+    const CHIP_BASE = 'rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap backdrop-blur';
+    const CHIP_IDLE = 'border-white/10 bg-white/[0.03] text-slate-400 hover:border-violet-300/50 hover:text-violet-200 hover:shadow-[0_0_18px_-4px_rgba(167,139,250,0.6)]';
+    const CHIP_ACTIVE = 'border-violet-300/70 bg-violet-500/90 text-white font-semibold shadow-[0_0_20px_-4px_rgba(167,139,250,0.8)]';
 
+    /* Compact worth: 240000 -> 240k, 1500000 -> 1.5M, 2000000000 -> 2B */
     function formatPrice(value) {
       if (value == null || isNaN(value)) return '—';
       const abs = Math.abs(value);
@@ -129,6 +198,15 @@
       return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     }
 
+    /* Rarity aura by worth */
+    function tierOf(price) {
+      if (price >= 100000) return { name: 'Mythic', text: 'text-amber-200', bar: 'from-amber-100 via-amber-400 to-amber-600', glow: 'hover:shadow-[0_0_44px_-10px_rgba(251,191,36,0.55)] hover:border-amber-200/40', chip: 'border-amber-200/40 bg-amber-300/10 text-amber-200' };
+      if (price >= 10000) return { name: 'Legendary', text: 'text-violet-200', bar: 'from-violet-200 via-violet-500 to-violet-700', glow: 'hover:shadow-[0_0_44px_-10px_rgba(167,139,250,0.6)] hover:border-violet-300/50', chip: 'border-violet-300/40 bg-violet-400/10 text-violet-200' };
+      if (price >= 1000) return { name: 'Epic', text: 'text-sky-200', bar: 'from-sky-200 via-sky-500 to-sky-700', glow: 'hover:shadow-[0_0_44px_-10px_rgba(125,211,252,0.5)] hover:border-sky-300/40', chip: 'border-sky-300/40 bg-sky-400/10 text-sky-200' };
+      if (price >= 100) return { name: 'Rare', text: 'text-emerald-200', bar: 'from-emerald-200 via-emerald-500 to-emerald-700', glow: 'hover:shadow-[0_0_44px_-10px_rgba(110,231,183,0.45)] hover:border-emerald-300/40', chip: 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200' };
+      return { name: 'Common', text: 'text-slate-300', bar: 'from-slate-300 via-slate-500 to-slate-600', glow: 'hover:shadow-[0_0_44px_-10px_rgba(148,163,184,0.4)] hover:border-slate-300/30', chip: 'border-slate-400/30 bg-slate-400/10 text-slate-300' };
+    }
+
     function calcPrices(pricePerItem, stackSize) {
       const half = Math.floor(stackSize / 2);
       return { perItem: pricePerItem, halfStack: pricePerItem * half, fullStack: pricePerItem * stackSize, halfCount: half, fullCount: stackSize };
@@ -137,7 +215,6 @@
     function getItemCategory(item) { return item.category || 'Misc'; }
 
     function iconSrc(item) {
-      // New export: relative 'textures/item/foo.png'. Legacy: embedded iconData.
       if (item.iconData) return item.iconData;
       if (item.icon) return item.icon;
       return null;
@@ -152,7 +229,9 @@
     function getFilteredItems() {
       const query = searchInput.value.toLowerCase().trim();
       return items.filter((item) => {
-        const matchesSearch = !query || item.name.toLowerCase().includes(query);
+        const matchesSearch = !query ||
+          item.name.toLowerCase().includes(query) ||
+          (item.minecraftId || '').toLowerCase().includes(query);
         const matchesCategory = !activeCategory || getItemCategory(item) === activeCategory;
         return matchesSearch && matchesCategory;
       });
@@ -174,8 +253,8 @@
 
     function updateSortDirectionLabel() {
       sortDirectionBtn.textContent = sortDirection === 'asc' ? '↑ Asc' : '↓ Desc';
-      sortDirectionBtn.classList.toggle('!border-emerald-400', sortDirection === 'desc');
-      sortDirectionBtn.classList.toggle('!text-emerald-300', sortDirection === 'desc');
+      sortDirectionBtn.classList.toggle('!border-violet-300/70', sortDirection === 'desc');
+      sortDirectionBtn.classList.toggle('!text-violet-200', sortDirection === 'desc');
     }
 
     function getCategoryCounts() {
@@ -191,6 +270,13 @@
       statItems.textContent = items.length;
       statCategories.textContent = new Set(items.map(getItemCategory)).size;
       statShown.textContent = shown ?? items.length;
+      const top = items.reduce((best, i) => (!best || i.pricePerItem > best.pricePerItem ? i : best), null);
+      if (top) {
+        statTopPrice.textContent = formatPrice(top.pricePerItem);
+        statTopPrice.title = formatFull(top.pricePerItem);
+        statTopName.textContent = '❖ ' + top.name;
+        statTopName.title = top.name;
+      }
     }
 
     function renderCategoryFilters() {
@@ -198,7 +284,7 @@
       const usedCategories = Object.keys(counts).sort((a, b) => a.localeCompare(b));
       const allCategories = [...new Set([...categories, ...usedCategories])].sort((a, b) => a.localeCompare(b));
       const chip = (label, cat, count, active) =>
-        `<button type="button" class="${CHIP_BASE} ${active ? CHIP_ACTIVE : CHIP_IDLE}" data-category="${escapeHtml(cat)}">${escapeHtml(label)}<span class="opacity-70 ml-1">(${count})</span></button>`;
+        `<button type="button" class="${CHIP_BASE} ${active ? CHIP_ACTIVE : CHIP_IDLE}" data-category="${escapeHtml(cat)}">${escapeHtml(label)}<span class="opacity-60 ml-1">${count}</span></button>`;
       categoryFilters.innerHTML =
         chip('All', '', items.length, activeCategory === '') +
         allCategories.filter((cat) => (counts[cat] || 0) > 0)
@@ -209,12 +295,20 @@
       const src = iconSrc(item);
       const initial = escapeHtml((item.name || '?').charAt(0).toUpperCase());
       if (!src) {
-        return `<span class="flex items-center justify-center w-10 h-10 rounded-md bg-slate-800 text-lg font-bold text-slate-500">${initial}</span>`;
+        return `<span class="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 font-display text-lg font-bold text-slate-600">${initial}</span>`;
       }
       return `<img src="${src}" alt="${escapeHtml(item.name)}" loading="lazy"
-          class="mc-icon w-10 h-10 object-contain"
+          class="mc-icon w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(167,139,250,0.35)]"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <span style="display:none" class="items-center justify-center w-10 h-10 rounded-md bg-slate-800 text-lg font-bold text-slate-500">${initial}</span>`;
+        <span style="display:none" class="items-center justify-center w-10 h-10 rounded-lg bg-white/5 font-display text-lg font-bold text-slate-600">${initial}</span>`;
+    }
+
+    function priceCell(label, value) {
+      return `
+        <div class="rounded-xl bg-black/50 border border-white/5 px-2 py-2 text-center">
+          <span class="block text-[9px] uppercase tracking-[0.18em] text-slate-500 mb-1">${label}</span>
+          <span class="block font-bold text-sm text-amber-100/90 tabular-nums" title="${formatFull(value)}">${formatPrice(value)}</span>
+        </div>`;
     }
 
     function renderItems() {
@@ -227,9 +321,9 @@
 
       if (filtered.length === 0) {
         itemsGrid.innerHTML = `
-          <div class="col-span-full text-center py-12 text-slate-400">
-            <span class="block text-4xl mb-3">${hasFilters ? '🔍' : '🗃️'}</span>
-            <p class="text-sm">${hasFilters ? 'No items match your filters.' : 'No items in the database.'}</p>
+          <div class="col-span-full text-center py-16 text-slate-500">
+            <span class="block text-4xl mb-3 text-violet-300/50">✦</span>
+            <p class="text-sm font-display tracking-[0.2em] uppercase text-xs">${hasFilters ? 'The spirits remain silent…' : 'The archive is empty.'}</p>
           </div>`;
         return;
       }
@@ -237,28 +331,24 @@
       itemsGrid.innerHTML = filtered.map((item) => {
         const p = calcPrices(item.pricePerItem, item.stackSize);
         const category = getItemCategory(item);
+        const tier = tierOf(item.pricePerItem);
         return `
-          <article class="flex flex-col gap-3 rounded-xl border-2 border-slate-700/60 bg-slate-800/60 p-4 transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-xl">
+          <article class="relic-card relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 overflow-hidden ${tier.glow}">
+            <span class="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent ${tier.bar} to-transparent opacity-80" aria-hidden="true"></span>
             <div class="flex items-center gap-3 min-w-0">
-              <div class="flex items-center justify-center w-14 h-14 rounded-lg bg-slate-950/80 border-2 border-slate-700/60 shrink-0 overflow-hidden">${iconHtml(item)}</div>
-              <div class="flex flex-col gap-1 min-w-0">
-                <span class="font-bold text-[15px] leading-tight text-slate-100 break-words">${escapeHtml(item.name)}</span>
-                <span class="self-start inline-block rounded-full border border-emerald-400/60 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">${escapeHtml(category)}</span>
+              <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-black/60 ring-1 ring-white/10 shrink-0 overflow-hidden">${iconHtml(item)}</div>
+              <div class="flex flex-col gap-1.5 min-w-0">
+                <span class="font-semibold text-[15px] leading-tight ${tier.text} break-words">${escapeHtml(item.name)}</span>
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block rounded-full border px-2 py-px text-[9px] font-semibold uppercase tracking-[0.14em] ${tier.chip}">◆ ${tier.name}</span>
+                  <span class="text-[10px] uppercase tracking-[0.14em] text-slate-500">${escapeHtml(category)}</span>
+                </span>
               </div>
             </div>
             <div class="grid grid-cols-3 gap-1.5">
-              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
-                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Per Item</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.perItem)}">${formatPrice(p.perItem)}</span>
-              </div>
-              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
-                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Half (${p.halfCount})</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.halfStack)}">${formatPrice(p.halfStack)}</span>
-              </div>
-              <div class="rounded-lg bg-slate-950/60 p-2 text-center">
-                <span class="block text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">Stack (${p.fullCount})</span>
-                <span class="block font-bold text-[13px] text-amber-300 tabular-nums" title="${formatFull(p.fullStack)}">${formatPrice(p.fullStack)}</span>
-              </div>
+              ${priceCell('Per item', p.perItem)}
+              ${priceCell('Half · ' + p.halfCount, p.halfStack)}
+              ${priceCell('Stack · ' + p.fullCount, p.fullStack)}
             </div>
           </article>`;
       }).join('');
@@ -266,8 +356,8 @@
 
     function showError(message) {
       itemsGrid.innerHTML = `
-        <div class="col-span-full text-center py-12 text-slate-400">
-          <span class="block text-4xl mb-3">⚠️</span>
+        <div class="col-span-full text-center py-16 text-slate-500">
+          <span class="block text-4xl mb-3 text-violet-300/50">✦</span>
           <p class="text-sm">${escapeHtml(message)}</p>
         </div>`;
       updateStats(0);
@@ -283,11 +373,11 @@
         categories = Array.isArray(data.categories) ? data.categories : [];
         if (data.exportedAt) {
           const date = new Date(data.exportedAt).toLocaleDateString();
-          footerMeta.textContent = `Last updated ${date} · Prices per item, half stack & full stack`;
+          footerMeta.textContent = `Forged in the dark · Last rite ${date} · Worth per item, half stack & full stack`;
         }
         renderItems();
       } catch {
-        showError(`Could not load ${DB_FILE}. Run “Update Pages” in the admin panel first.`);
+        showError(`Could not load ${DB_FILE} — serve this folder over http (e.g. python -m http.server).`);
       }
     }
 
@@ -305,6 +395,52 @@
       updateSortDirectionLabel();
       renderItems();
     });
+
+    /* Arcane dust motes */
+    (function motes() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const canvas = document.getElementById('motes');
+      const ctx = canvas.getContext('2d');
+      let w, h, parts = [];
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      function spawn(n) {
+        parts = Array.from({ length: n }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 1.6 + 0.4,
+          vy: -(Math.random() * 0.22 + 0.05),
+          vx: (Math.random() - 0.5) * 0.12,
+          tw: Math.random() * Math.PI * 2,
+          ts: Math.random() * 0.02 + 0.005,
+          gold: Math.random() < 0.22,
+        }));
+      }
+      function tick() {
+        ctx.clearRect(0, 0, w, h);
+        for (const m of parts) {
+          m.tw += m.ts;
+          m.x += m.vx + Math.sin(m.tw) * 0.08;
+          m.y += m.vy;
+          if (m.y < -4) { m.y = h + 4; m.x = Math.random() * w; }
+          if (m.x < -4) m.x = w + 4;
+          if (m.x > w + 4) m.x = -4;
+          const a = 0.25 + Math.abs(Math.sin(m.tw)) * 0.5;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fillStyle = m.gold ? `rgba(251,191,36,${a})` : `rgba(167,139,250,${a})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(tick);
+      }
+      resize();
+      spawn(Math.min(90, Math.floor((window.innerWidth * window.innerHeight) / 22000)));
+      window.addEventListener('resize', () => { resize(); spawn(parts.length); });
+      tick();
+    })();
+
     updateSortDirectionLabel();
     loadDatabase();
   </script>

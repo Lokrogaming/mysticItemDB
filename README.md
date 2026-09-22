@@ -1,16 +1,15 @@
-# Mystic Item DB
+# Mystic Archive
 
-A 100% static Minecraft item price database — only HTML, Tailwind CSS, vanilla JavaScript, JSON and PNG textures. No backend, no build step, no npm.
+A 100% static, mythic-dark Minecraft relic price grimoire — only HTML, Tailwind CSS, vanilla JavaScript, JSON and PNG textures. No backend, no build step, no npm.
 
-## Pages
+## Site
 
-The whole site lives in `docs/` (ready for GitHub Pages → Settings → Pages → Deploy from branch → `/docs`):
+Everything lives in `docs/` (GitHub Pages → Deploy from branch → `/docs`):
 
-| Page | Path | What it does |
-|------|------|--------------|
-| Price List | `docs/index.html` | Read-only showcase, reads `db.json` |
-| Admin | `docs/admin/index.html` | Add/edit/delete items, import/export, reload prices from `worth.json` |
-| Component Builder | `docs/builder/index.html` | Build item packs in the browser (localStorage) |
+- `docs/index.html` — the price archive: search, sort, schools (categories), rarity auras, compact worth (`240k`, `1.5M`) with exact values on hover
+- `docs/db.json` — the database (items with prices, categories, stack sizes, texture paths)
+- `docs/data/worth.json` — price source
+- `docs/textures/` — vanilla item/block/entity/map textures with clean names, e.g. `textures/item/diamond.png`
 
 ## Run locally
 
@@ -21,21 +20,20 @@ cd docs
 python -m http.server 8000
 ```
 
-Then open http://localhost:8000 (admin at `/admin/`, builder at `/builder/`).
-Note: opening the HTML files directly via `file://` won't load `db.json` (browsers block `fetch` there) — use http.
+Then open http://localhost:8000.
+Note: opening the HTML file directly via `file://` won't load `db.json` (browsers block `fetch` there) — use http.
 
-## Data & workflow
+## Data
 
-- `docs/db.json` — the published database (1187 items with prices, categories, stack sizes, texture paths).
-- `docs/data/worth.json` — price source; the admin panel can re-import it in the browser (merge or replace).
-- `docs/textures/` — vanilla item/block/entity/map textures with clean names, e.g. `textures/item/diamond.png`.
-- Admin edits live in the browser (localStorage). To publish: **Export DB** → replace `docs/db.json` with the download → commit & push.
-- Custom icons are stored as base64 (`iconData`); vanilla icons are stored as relative `textures/…` paths.
+Prices live in `docs/db.json` (schema: `{ version, exportedAt, categories, items[] }`, each item `{ id, name, minecraftId, category, pricePerItem, stackSize, icon }`).
+To update prices, edit `db.json` directly or regenerate it from `docs/data/worth.json` keeping the same schema and site-root-relative `textures/…` icon paths.
 
 ## Price calculations
 
-| Unit | Formula |
-|------|---------|
-| Per Item | `pricePerItem` |
-| Half Stack | `pricePerItem × floor(stackSize / 2)` |
-| Full Stack | `pricePerItem × stackSize` |
+| Unit | Formula | Display |
+|------|---------|---------|
+| Per Item | `pricePerItem` | `240k` for 240000 (exact value on hover) |
+| Half Stack | `pricePerItem × floor(stackSize / 2)` | compact `k` / `M` / `B` |
+| Full Stack | `pricePerItem × stackSize` | compact `k` / `M` / `B` |
+
+Rarity aura by worth: Common (<100) · Rare (≥100) · Epic (≥1k) · Legendary (≥10k) · Mythic (≥100k).
